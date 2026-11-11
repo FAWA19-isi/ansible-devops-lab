@@ -1,26 +1,27 @@
 ---
-- name: Déploiement et configuration automatisés DevOps
+- name: Déploiement automatisé de l'API Flask avec Docker
   hosts: serveurs_web
   tasks:
-    - name: 1. Créer le répertoire de production
-      file:
-        path: /tmp/devops_prod
-        state: directory
-        mode: '0755'
+    - name: 1. Nettoyer un éventuel ancien conteneur Flask Ansible
+      command: docker rm -f api-flask-ansible
+      ignore_errors: yes
 
-    - name: 2. Générer le fichier de configuration de l'application
-      copy:
-        dest: /tmp/devops_prod/status.txt
-        content: |
-          Application déployée automatiquement par Ansible
-          Auteur : FAWA19-isi
-          Environnement : Cisco DEVASC
+    - name: 2. Construire l'image Docker depuis le projet api-flask-docker
+      command: docker build -t mon-api-flask /home/devasc/api-flask-docker
 
-    - name: 3. Vérifier que le service Docker est actif
-      command: docker info
-      register: docker_status
-      changed_when: false
+    - name: 3. Démarrer le conteneur API Flask sur le port 5002
+      command: docker run -d -p 5002:5000 --name api-flask-ansible mon-api-flask
 
-    - name: 4. Afficher la confirmation
+    - name: 4. Attendre 2 secondes le démarrage de Flask
+      pause:
+        seconds: 2
+
+    - name: 5. Tester automatiquement l'endpoint /api/info
+      uri:
+        url: http://localhost:5002/api/info
+        return_content: yes
+      register: api_response
+
+    - name: 6. Afficher le résultat renvoyé par l'API déployée
       debug:
-        msg: "Déploiement réussi ! Le dossier /tmp/devops_prod est prêt et Docker répond."
+        var: api_response.json

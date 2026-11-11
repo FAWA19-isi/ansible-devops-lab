@@ -1,0 +1,26 @@
+---
+- name: Déploiement et configuration automatisés DevOps
+  hosts: serveurs_web
+  tasks:
+    - name: 1. Créer le répertoire de production
+      file:
+        path: /tmp/devops_prod
+        state: directory
+        mode: '0755'
+
+    - name: 2. Générer le fichier de configuration de l'application
+      copy:
+        dest: /tmp/devops_prod/status.txt
+        content: |
+          Application déployée automatiquement par Ansible
+          Auteur : FAWA19-isi
+          Environnement : Cisco DEVASC
+
+    - name: 3. Vérifier que le service Docker est actif
+      command: docker info
+      register: docker_status
+      changed_when: false
+
+    - name: 4. Afficher la confirmation
+      debug:
+        msg: "Déploiement réussi ! Le dossier /tmp/devops_prod est prêt et Docker répond."
